@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
+  <title>Morpheus — EDA Suite for Living Machines</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --bg:       #0a0e1a;
+      --panel:    #111827;
+      --border:   #1f2937;
+      --accent:   #6366f1;
+      --accent2:  #10b981;
+      --accent3:  #f59e0b;
+      --text:     #e5e7eb;
+      --muted:    #6b7280;
+      --muscle:   #ef4444;
+      --adhesive: #22c55e;
+      --stiff:    #a855f7;
+      --passive:  #38bdf8;
+    }
+    body { background:var(--bg); color:var(--text); font-family:'Inter',system-ui,sans-serif;
+           display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+
+    /* ── Header ── */
+    header {
+      background:var(--panel); border-bottom:1px solid var(--border);
+      padding:12px 24px; display:flex; align-items:center; gap:16px; flex-shrink:0;
+    }
+    .logo { font-size:20px; font-weight:800; letter-spacing:-0.5px; }
+    .logo span { color:var(--accent); }
+    .tagline { color:var(--muted); font-size:13px; }
+    .status-pill { margin-left:auto; padding:4px 12px; border-radius:999px; font-size:12px;
+                   background:#1a2744; border:1px solid var(--accent); color:var(--accent); }
+
+    /* ── Main layout ── */
+    .workspace { display:grid; grid-template-columns:380px 1fr 360px;
+                 height:calc(100vh - 57px); overflow:hidden; }
+
+    /* ── Left panel: Input ── */
+    .panel-left { background:var(--panel); border-right:1px solid var(--border);
+                  display:flex; flex-direction:column; overflow-y:auto; overflow-x:hidden; }
+    .panel-section { padding:16px; border-bottom:1px solid var(--border); }
+    .panel-section h3 { font-size:11px; font-weight:600; text-transform:uppercase;
+                        letter-spacing:1px; color:var(--muted); margin-bottom:12px; }
+    textarea, input, select {
+      width:100%; background:#0d1424; border:1px solid var(--border); color:var(--text);
+      border-radius:8px; padding:10px 12px; font-size:13px; font-family:inherit;
+      resize:vertical; outline:none; transition:border-color 0.2s;
+    }
+    textarea:focus, input:focus, select:focus { border-color:var(--accent); }
+    .param-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .param-row label { display:block; font-size:11px; color:var(--muted); margin-bottom:4px; }
+    .btn {
+      width:100%; padding:12px; border-radius:8px; border:none; cursor:pointer;
+      font-size:14px; font-weight:600; transition:all 0.2s;
+    }
+    .btn-primary { background:var(--accent); color:white; }
+    .btn-primary:hover { background:#4f46e5; transform:translateY(-1px); }
+    .btn-primary:active { transform:translateY(0); }
+    .btn-secondary { background:var(--border); color:var(--text); }
+    .btn-secondary:hover { background:#374151; }
+    .btn-danger { background:#7f1d1d; color:#fca5a5; }
+
+    /* ── Center: 3D viewer ── */
+    .panel-center { display:flex; flex-direction:column; position:relative; }
+    #canvas-container { flex:1; position:relative; }
+    #three-canvas { width:100%; height:100%; display:block; }
+    .canvas-overlay {
+      position:absolute; top:16px; left:16px; right:16px;
+      display:flex; gap:8px; pointer-events:none;
+    }
+    .metric-chip {
+      background:rgba(10,14,26,0.85); border:1px solid var(--border);
+      backdrop-filter:blur(8px); padding:8px 14px; border-radius:8px;
+      font-size:13px; display:flex; flex-direction:column; gap:2px;
+    }
+    .metric-chip .label { font-size:10px; color:var(--muted); text-transform:uppercase; }
+    .metric-chip .value { font-weight:700; font-size:18px; }
+    .metric-chip.green .value { color:var(--accent2); }
+    .metric-chip.amber .value { color:var(--accent3); }
+    .metric-chip.purple .value { color:var(--stiff); }
+
+    .canvas-legend {
+      position:absolute; bottom:16px; left:16px;
+      background:rgba(10,14,26,0.85); border:1px solid var(--border);
+      backdrop-filter:blur(8px); padding:10px 14px; border-radius:8px;
+      font-size:12px; display:flex; flex-direction:column; gap:6px;
+    }
+    .legend-item { display:flex; align-items:center; gap:8px; }
+    .legend-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+
+    /* ── Right panel: Agent + Metrics ── */
+    .panel-right { background:var(--panel); border-left:1px solid var(--border);
+                   display:flex; flex-direction:column; overflow:hidden; }
+
+    .tabs { display:flex; border-bottom:1px solid var(--border); }
+    .tab { flex:1; padding:12px; text-align:center; font-size:13px; cursor:pointer;
+           color:var(--muted); border-bottom:2px solid transparent; transition:all 0.2s; }
+    .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+    .tab-content { display:none; flex:1; overflow:hidden; flex-direction:column; }
+    .tab-content.active { display:flex; }
+
+    /* Agent chat */
+    .agent-messages { flex:1; overflow-y:auto; padding:16px; display:flex;
+                      flex-direction:column; gap:12px; }
+    .msg { border-radius:10px; padding:12px 14px; font-size:13px; line-height:1.6; max-width:100%; }
+    .msg-user { background:#1a2744; border:1px solid #2d3f6e; align-self:flex-end; }
+    .msg-agent { background:#111827; border:1px solid var(--border); }
+    .msg-tool-call { background:#1a1a2e; border:1px solid #4a3f7a; font-family:monospace;
+                     font-size:11px; border-radius:6px; }
+    .msg-tool-result { background:#0a2010; border:1px solid #1a4a20; font-family:monospace;
+                       font-size:11px; border-radius:6px; }
+    .msg-optimization { background:#0d1424; border:1px solid var(--border);
+                        font-size:11px; font-family:monospace; padding:6px 10px;
+                        color:var(--muted); border-left:3px solid var(--accent); }
+    .msg-label { font-size:10px; color:var(--muted); margin-bottom:4px; }
+
+    .agent-input { border-top:1px solid var(--border); padding:12px; display:flex; gap:8px; }
+    .agent-input input { flex:1; }
+    .send-btn { padding:10px 16px; border-radius:8px; background:var(--accent);
+                border:none; color:white; cursor:pointer; font-size:13px; }
+
+    /* Metrics tab */
+    .metrics-content { flex:1; overflow-y:auto; padding:16px; display:flex;
+                       flex-direction:column; gap:16px; }
+    .chart-container { background:#0d1424; border-radius:10px; padding:12px;
+                       border:1px solid var(--border); }
+    .chart-title { font-size:11px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; }
+    .metrics-log { background:#0a0e1a; border:1px solid var(--border); border-radius:6px;
+                   padding:10px; font-family:monospace; font-size:11px; color:var(--muted);
+                   flex:1; min-height:120px; overflow-y:auto; }
+    .metrics-log .log-line { margin:2px 0; }
+    .metrics-log-placeholder { color:var(--muted); font-size:13px; padding:24px 16px; text-align:center; flex-shrink:0; }
+    .dim-card { background:#0d1424; border:1px solid var(--border); border-radius:8px; padding:12px; }
+    .dim-card .name { font-size:10px; color:var(--muted); }
+    .dim-card .val { font-size:16px; font-weight:700; color:var(--accent2); margin-top:4px; }
+    .dim-card .desc { font-size:10px; color:var(--muted); margin-top:2px; }
+
+    /* Protocol tab */
+    .protocol-content { flex:1; overflow-y:auto; padding:16px; }
+    .protocol-section { margin-bottom:16px; }
+    .protocol-section h4 { font-size:12px; color:var(--accent); margin-bottom:8px;
+                            text-transform:uppercase; letter-spacing:0.5px; }
+    .protocol-item { background:#0d1424; border:1px solid var(--border); border-radius:6px;
+                     padding:10px; margin-bottom:6px; font-size:12px; }
+    .protocol-item .step-label { color:var(--muted); font-size:10px; margin-bottom:4px; }
+
+    /* Stage progress */
+    .stage-progress { padding:16px; border-top:1px solid var(--border); flex-shrink:0; }
+    .stage-title { font-size:11px; color:var(--muted); text-transform:uppercase; margin-bottom:8px; }
+    .stages { display:flex; gap:4px; }
+    .stage-pill { flex:1; text-align:center; padding:6px 4px; border-radius:6px; font-size:10px;
+                  font-weight:600; background:var(--border); color:var(--muted); transition:all 0.3s; }
+    .stage-pill.active { background:var(--accent); color:white; }
+    .stage-pill.done   { background:var(--accent2); color:white; }
+
+    /* Progress bar */
+    .progress-bar { height:3px; background:var(--border); border-radius:999px; overflow:hidden; }
+    .progress-fill { height:100%; background:linear-gradient(90deg, var(--accent), var(--accent2));
+                     transition:width 0.3s; width:0%; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:999px; }
+
+    /* Wet lab upload area */
+    .upload-zone { border:2px dashed var(--border); border-radius:10px; padding:20px;
+                   text-align:center; color:var(--muted); font-size:13px; cursor:pointer;
+                   transition:border-color 0.2s; }
+    .upload-zone:hover { border-color:var(--accent); }
+
+    /* Tooltip */
+    [title]:hover { position:relative; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Morph<span>eus</span></div>
+  <div class="tagline">EDA Suite for Programmable Organism Design</div>
+  <div class="status-pill" id="status-pill">● Ready</div>
+</header>
+
+<div class="workspace">
+
+  <!-- ══ LEFT: INPUT PANEL ══ -->
+  <div class="panel-left">
+    <div class="panel-section">
+      <h3>Anthropic API Key</h3>
+      <input type="password" id="api-key" placeholder="Paste sk-ant-... (or set ANTHROPIC_API_KEY)" 
+             title="Required for AI Scientist. Stored in session only, not sent to third parties."/>
+      <div style="font-size:10px; color:var(--muted); margin-top:4px;">Required for the AI Scientist agent. Leave blank to use server env var.</div>
+    </div>
+    <div class="panel-section">
+      <h3>Fluid Environment</h3>
+      <div class="param-row" style="margin-bottom:8px">
+        <label>Fluid Type</label>
+        <select id="fluid-select">
+          <option value="water_pure">Pure Water</option>
+          <option value="water_groundwater">Groundwater</option>
+          <option value="water_wastewater">Wastewater</option>
+          <option value="blood_whole">Whole Blood (Carreau-Yasuda)</option>
+          <option value="blood_plasma">Blood Plasma</option>
+          <option value="synovial_fluid">Synovial Fluid</option>
+          <option value="mucus_airway">Airway Mucus (Oldroyd-B)</option>
+          <option value="csf">CSF</option>
+        </select>
+      </div>
+      <div class="param-grid">
+        <div class="param-row">
+          <label>Viscosity (mPa·s)</label>
+          <input type="number" id="viscosity" value="1.002" step="0.1" min="0.1"/>
+        </div>
+        <div class="param-row">
+          <label>Temperature (°C)</label>
+          <input type="number" id="temperature" value="20" min="0" max="100"/>
+        </div>
+        <div class="param-row">
+          <label>pH</label>
+          <input type="number" id="ph" value="7.4" step="0.1" min="0" max="14"/>
+        </div>
+        <div class="param-row">
+          <label>Flow Speed (cm/s)</label>
+          <input type="number" id="flow-speed" value="1.0" step="0.1" min="0"/>
+        </div>
+        <div class="param-row">
+          <label>Ionic Strength (M)</label>
+          <input type="number" id="ionic" value="0.15" step="0.01"/>
+        </div>
+        <div class="param-row">
+          <label>Density (kg/m³)</label>
+          <input type="number" id="density" value="1000" step="1"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>Contaminant / Target</h3>
+      <div class="param-row" style="margin-bottom:8px">
+        <label>Target Type</label>
+        <select id="contaminant-select">
+          <option value="hdpe_microplastic">HDPE Microplastic (vdW)</option>
+          <option value="pet_microplastic">PET Microplastic (DLVO)</option>
+          <option value="pfas_pfoa">PFAS/PFOA (DLVO + electrostatic)</option>
+          <option value="fibrin_clot">Fibrin Clot (steric + mechanical)</option>
+          <option value="amyloid_beta">Amyloid-β Plaque (combined)</option>
+          <option value="ldl_cholesterol">LDL Cholesterol (hydrophobic)</option>
+          <option value="nanoplastic_polystyrene">Polystyrene Nanoplastic</option>
+        </select>
+      </div>
+      <div class="param-grid">
+        <div class="param-row">
+          <label>Particle Size (µm)</label>
+          <input type="number" id="particle-size" value="50" step="1"/>
+        </div>
+        <div class="param-row">
+          <label>Zeta Potential (mV)</label>
+          <input type="number" id="zeta" value="-32" step="1"/>
+        </div>
+        <div class="param-row">
+          <label>N Particles</label>
+          <input type="number" id="n-particles" value="40" min="5" max="200"/>
+        </div>
+        <div class="param-row">
+          <label>Density (kg/m³)</label>
+          <input type="number" id="particle-density" value="950" step="10"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>Optimization Config</h3>
+      <div class="param-grid">
+        <div class="param-row">
+          <label>Generations (NEAT)</label>
+          <input type="number" id="n-gens" value="15" min="5" max="200" title="Fewer = faster run"/>
+        </div>
+        <div class="param-row">
+          <label>BO Iterations</label>
+          <input type="number" id="bo-iters" value="5" min="2" max="50"/>
+        </div>
+        <div class="param-row">
+          <label>Gradient Steps</label>
+          <input type="number" id="grad-steps" value="40" min="10" max="200"/>
+        </div>
+        <div class="param-row">
+          <label>Population Size</label>
+          <input type="number" id="pop-size" value="12" min="5" max="100"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section" style="border-top:1px solid var(--border);">
+      <h3>Run Simulation</h3>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn btn-primary" id="run-btn" onclick="startOptimization()">
+          🧬 Run Morpheus
+        </button>
+        <button class="btn btn-secondary" onclick="runQuickSim()">
+          ⚡ Quick Simulate
+        </button>
+      </div>
+      <div class="progress-bar" style="margin-top:12px;">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div style="font-size:11px; color:var(--muted); margin-top:6px;" id="progress-label">Ready</div>
+    </div>
+
+    <!-- Wet lab upload -->
+    <div class="panel-section">
+      <h3>Wet Lab Upload</h3>
+      <div class="param-grid" style="margin-bottom:8px;">
+        <div class="param-row">
+          <label>Sim Capture %</label>
+          <input type="number" id="sim-pct" value="73" min="0" max="100"/>
+        </div>
+        <div class="param-row">
+          <label>Actual Capture %</label>
+          <input type="number" id="actual-pct" value="41" min="0" max="100"/>
+        </div>
+      </div>
+      <input type="text" id="microscopy-notes" placeholder="Microscopy notes (optional)..." style="margin-bottom:8px;"/>
+      <button class="btn btn-secondary" onclick="uploadWetlab()">📊 Analyze Discrepancy</button>
+    </div>
+  </div>
+
+  <!-- ══ CENTER: 3D VIEWER ══ -->
+  <div class="panel-center">
+    <div id="canvas-container">
+      <canvas id="three-canvas"></canvas>
+
+      <div class="canvas-overlay">
+        <div class="metric-chip green">
+          <div class="label">Capture Efficiency</div>
+          <div class="value" id="metric-capture">—</div>
+        </div>
+        <div class="metric-chip amber">
+          <div class="label">Fitness Score</div>
+          <div class="value" id="metric-fitness">—</div>
+        </div>
+        <div class="metric-chip purple">
+          <div class="label">Generation</div>
+          <div class="value" id="metric-gen">—</div>
+        </div>
+        <div class="metric-chip">
+          <div class="label">Energy (nJ)</div>
+          <div class="value" id="metric-energy">—</div>
+        </div>
+      </div>
+
+      <div class="canvas-legend">
+        <div style="font-size:10px; color:var(--muted); margin-bottom:4px;">VOXEL TYPES</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--passive)"></div><span style="font-size:11px">Passive (structural)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--muscle)"></div><span style="font-size:11px">Muscle (cilia)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--adhesive)"></div><span style="font-size:11px">Adhesive (capture)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--stiff)"></div><span style="font-size:11px">Stiff (core)</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fbbf24;border-radius:50%"></div><span style="font-size:11px">Free contaminant</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444;border-radius:50%"></div><span style="font-size:11px">Captured contaminant</span></div>
+      </div>
+    </div>
+
+    <!-- Stage progress -->
+    <div class="stage-progress">
+      <div class="stage-title">Optimization Pipeline</div>
+      <div class="stages">
+        <div class="stage-pill" id="stage-evo">NEAT Evolution</div>
+        <div class="stage-pill" id="stage-bo">Bayesian Opt</div>
+        <div class="stage-pill" id="stage-grad">Gradient Ascent</div>
+        <div class="stage-pill" id="stage-proto">Protocol Gen</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RIGHT: AGENT + METRICS ══ -->
+  <div class="panel-right">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('agent')">🤖 AI Scientist</div>
+      <div class="tab" onclick="switchTab('metrics')">📊 Metrics</div>
+      <div class="tab" onclick="switchTab('protocol')">🧫 Protocol</div>
+    </div>
+
+    <!-- Agent tab: Claude LLM chat only -->
+    <div class="tab-content active" id="tab-agent">
+      <div class="agent-messages" id="agent-messages">
+        <div class="msg msg-agent">
+          <div class="msg-label">MORPHEUS AI SCIENTIST</div>
+          Describe your remediation problem. I'll parse the physics, select interaction models, evolve an optimal organism, and generate exact fabrication instructions.
+        </div>
+      </div>
+      <div class="agent-input">
+        <input type="text" id="agent-input" placeholder="Ask the AI scientist..." 
+               onkeydown="if(event.key==='Enter')sendAgentMessage()"/>
+        <button class="send-btn" onclick="sendAgentMessage()">→</button>
+      </div>
+    </div>
+
+    <!-- Metrics tab: in-silico log only -->
+    <div class="tab-content" id="tab-metrics">
+      <div class="metrics-content" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+        <div id="metrics-log-placeholder" class="metrics-log-placeholder">Here you will see experimental in-silico metrics</div>
+        <div id="metrics-log" class="metrics-log"></div>
+      </div>
+    </div>
+
+    <!-- Protocol tab -->
+    <div class="tab-content" id="tab-protocol">
+      <div class="protocol-content" id="protocol-content">
+        <div style="color:var(--muted); font-size:13px; text-align:center; padding:40px 20px;">
+          Run optimization to generate differentiation protocol
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// THREE.JS 3D VIEWER
+// ══════════════════════════════════════════════════════════
+const VOXEL_COLORS = {
+  1: 0x38bdf8,  // passive - sky blue
+  2: 0xef4444,  // muscle  - red
+  3: 0x22c55e,  // adhesive - green
+  4: 0xa855f7,  // stiff  - purple
+};
+
+let scene, camera, renderer, animationId;
+let voxelMeshes = [], particleMeshes = [];
+let currentGrid = null;
+let animFrame = 0, simHistory = [];
+
+function initThree() {
+  const container = document.getElementById('canvas-container');
+  const canvas    = document.getElementById('three-canvas');
+
+  scene    = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0e1a);
+  scene.fog = new THREE.FogExp2(0x0a0e1a, 0.015);
+
+  camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.01, 1000);
+  camera.position.set(15, 12, 18);
+  camera.lookAt(4, 3, 3);
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.shadowMap.enabled = true;
+
+  // Lighting
+  const ambient = new THREE.AmbientLight(0x334466, 0.8);
+  scene.add(ambient);
+  const dirLight = new THREE.DirectionalLight(0x6699ff, 1.2);
+  dirLight.position.set(10, 20, 10);
+  dirLight.castShadow = true;
+  scene.add(dirLight);
+  const pointLight = new THREE.PointLight(0x6366f1, 0.8, 50);
+  pointLight.position.set(-5, 10, 5);
+  scene.add(pointLight);
+
+  // Grid helper
+  const gridHelper = new THREE.GridHelper(30, 30, 0x1f2937, 0x111827);
+  gridHelper.position.y = -0.5;
+  scene.add(gridHelper);
+
+  // Simple orbit controls
+  let isDragging = false, prevMouse = {x:0, y:0};
+  canvas.addEventListener('mousedown', e => { isDragging=true; prevMouse={x:e.clientX,y:e.clientY}; });
+  canvas.addEventListener('mouseup',   () => { isDragging=false; });
+  canvas.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const dx = e.clientX - prevMouse.x, dy = e.clientY - prevMouse.y;
+    const spherical = new THREE.Spherical().setFromVector3(camera.position);
+    spherical.theta -= dx * 0.01;
+    spherical.phi   = Math.max(0.1, Math.min(Math.PI-0.1, spherical.phi + dy*0.01));
+    camera.position.setFromSpherical(spherical);
+    camera.lookAt(4, 3, 3);
+    prevMouse = {x:e.clientX, y:e.clientY};
+  });
+  canvas.addEventListener('wheel', e => {
+    const d = camera.position.distanceTo(new THREE.Vector3(4,3,3));
+    const factor = 1 + e.deltaY * 0.001;
+    camera.position.multiplyScalar(Math.max(0.5, Math.min(3.0, factor)));
+  });
+
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+
+  animate();
+}
+
+function animate() {
+  animationId = requestAnimationFrame(animate);
+
+  // Animate simulation frames
+  if (simHistory.length > 0) {
+    const frame = simHistory[animFrame % simHistory.length];
+    renderFrame(frame);
+    animFrame++;
+  }
+
+  renderer.render(scene, camera);
+}
+
+function renderGrid(grid) {
+  // Clear old voxels
+  voxelMeshes.forEach(m => scene.remove(m));
+  voxelMeshes = [];
+
+  const geom = new THREE.BoxGeometry(0.92, 0.92, 0.92);
+  const X = grid.length, Y = grid[0].length, Z = grid[0][0].length;
+
+  for (let i=0; i<X; i++) {
+    for (let j=0; j<Y; j++) {
+      for (let k=0; k<Z; k++) {
+        const t = grid[i][j][k];
+        if (t === 0) continue;
+        const color = VOXEL_COLORS[t] || 0x888888;
+        const mat   = new THREE.MeshPhongMaterial({
+          color, transparent: true, opacity: 0.82,
+          emissive: new THREE.Color(color).multiplyScalar(0.1),
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.position.set(i, k, j);
+        mesh.castShadow = true;
+        scene.add(mesh);
+        voxelMeshes.push(mesh);
+      }
+    }
+  }
+}
+
+function renderFrame(frame) {
+  // Update voxel positions (soft-body deformation)
+  const positions = frame.voxel_pos;
+  const types     = frame.voxel_types;
+
+  voxelMeshes.forEach(m => scene.remove(m));
+  voxelMeshes = [];
+  const geom = new THREE.BoxGeometry(0.88, 0.88, 0.88);
+  positions.forEach((pos, idx) => {
+    const t = types[idx];
+    const color = VOXEL_COLORS[t] || 0x888888;
+    const mat = new THREE.MeshPhongMaterial({color, transparent:true, opacity:0.8,
+      emissive: new THREE.Color(color).multiplyScalar(0.15)});
+    const mesh = new THREE.Mesh(geom, mat);
+    // Scale positions from meters to scene units
+    const scale = 1e4;
+    mesh.position.set(pos[0]*scale, pos[2]*scale, pos[1]*scale);
+    scene.add(mesh);
+    voxelMeshes.push(mesh);
+  });
+
+  // Update particles
+  particleMeshes.forEach(m => scene.remove(m));
+  particleMeshes = [];
+  const pPos = frame.particle_pos;
+  const pCap = frame.captured;
+  const pGeom = new THREE.SphereGeometry(0.15, 8, 8);
+  pPos.forEach((pos, idx) => {
+    const color = pCap[idx] ? 0xef4444 : 0xfbbf24;
+    const mat   = new THREE.MeshPhongMaterial({color, emissive: new THREE.Color(color).multiplyScalar(0.3)});
+    const mesh  = new THREE.Mesh(pGeom, mat);
+    const scale = 1e4;
+    mesh.position.set(pos[0]*scale, pos[2]*scale, pos[1]*scale);
+    scene.add(mesh);
+    particleMeshes.push(mesh);
+  });
+
+  // Update metrics
+  if (frame.pct_captured !== undefined) {
+    document.getElementById('metric-capture').textContent = frame.pct_captured.toFixed(1) + '%';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// METRICS TAB: log only (charts removed)
+// ══════════════════════════════════════════════════════════
+function updateFitnessChart() {}
+function updateCaptureChart() {}
+
+// ══════════════════════════════════════════════════════════
+// WEBSOCKET + API
+// ══════════════════════════════════════════════════════════
+let ws = null, sessionId = null;
+let genCount = 0;
+/** When user sends agent message, we stream response into this element until 'done' or 'error'. */
+let currentAgentMsgEl = null;
+
+function addMetricsLogLine(text) {
+  const placeholder = document.getElementById('metrics-log-placeholder');
+  if (placeholder) { placeholder.style.display = 'none'; }
+  const logEl = document.getElementById('metrics-log');
+  if (!logEl) return;
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.textContent = text;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function handleWsMessage(e) {
+  const msg = JSON.parse(e.data);
+  if (msg.type === 'progress') {
+    const d = msg.data;
+    genCount++;
+    if (d.generation !== undefined) {
+      const genEl = document.getElementById('metric-gen');
+      if (genEl) genEl.textContent = d.generation;
+      setStatus(`Generation ${d.generation} | Best: ${(d.best_overall||0).toFixed(2)}`, 10 + genCount * 0.5);
+      const capturePct = (d.capture_pct != null ? d.capture_pct : 0).toFixed(1);
+      addMetricsLogLine(`Gen ${d.generation} | Fitness: ${(d.best_overall||0).toFixed(2)} | Capture: ${capturePct}%`);
+    }
+    if (d.bo_iter !== undefined) {
+      setStage('evo', 'done'); setStage('bo', 'active');
+      setStatus(`Bayesian optimization: iteration ${d.bo_iter}`, 60 + d.bo_iter);
+      addMetricsLogLine(`BO iter ${d.bo_iter} | Fitness: ${(d.fitness!=null?d.fitness:0).toFixed(2)} | Best: ${(d.best!=null?d.best:0).toFixed(2)}`);
+    }
+    if (d.grad_step !== undefined) {
+      setStage('bo', 'done'); setStage('grad', 'active');
+      setStatus(`Gradient ascent: step ${d.grad_step} | F=${(d.fitness||0).toFixed(2)}`, 80);
+      const fitEl = document.getElementById('metric-fitness');
+      if (fitEl) fitEl.textContent = (d.best||0).toFixed(1);
+      if (d.grad_step % 20 === 0 || d.grad_step === 0)
+        addMetricsLogLine(`Gradient step ${d.grad_step} | F: ${(d.fitness!=null?d.fitness:0).toFixed(2)} | Best: ${(d.best!=null?d.best:0).toFixed(2)}`);
+    }
+    return;
+  }
+  if (msg.type === 'sim_frame') {
+    simHistory.push(msg.data);
+    return;
+  }
+  if (msg.type === 'log_lines') {
+    const arr = msg.lines || [];
+    for (let i = 0; i < arr.length; i++) addMetricsLogLine(arr[i]);
+    return;
+  }
+  if (msg.type === 'optimization_complete') {
+    setStage('grad', 'done'); setStage('proto', 'active');
+    const d = msg.data;
+    document.getElementById('metric-capture').textContent = (d.capture_efficiency || 0).toFixed(1) + '%';
+    document.getElementById('metric-fitness').textContent = (d.best_fitness || 0).toFixed(1);
+    document.getElementById('metric-energy').textContent = (d.energy_nJ || 0).toFixed(2);
+    if (d.best_grid) {
+      currentGrid = d.best_grid;
+      renderGrid(d.best_grid);
+    }
+    if (d.capture_efficiency) {}
+    setStatus(`Complete! Capture: ${(d.capture_efficiency||0).toFixed(1)}%`, 100);
+    setStage('proto', 'done');
+    generateProtocolUI(d);
+    addMetricsLogLine(`Optimization complete — Capture: ${(d.capture_efficiency||0).toFixed(1)}% | Fitness: ${(d.best_fitness||0).toFixed(2)} | ${(msg.data.stages||[]).map(s=>s.stage).join(' → ')}`);
+    return;
+  }
+  if (msg.type === 'sim_complete') {
+    const d = msg.data;
+    document.getElementById('metric-capture').textContent = (d.capture_efficiency != null ? d.capture_efficiency : 0).toFixed(1) + '%';
+    document.getElementById('metric-fitness').textContent = (d.fitness != null ? d.fitness : 0).toFixed(1);
+    document.getElementById('metric-energy').textContent = (d.energy_nJ != null ? d.energy_nJ : 0).toFixed(2);
+    setStatus(`Sim complete — Capture: ${(d.capture_efficiency!=null?d.capture_efficiency:0).toFixed(1)}%`, 100);
+    addMetricsLogLine(`Quick simulate complete — Capture: ${(d.capture_efficiency!=null?d.capture_efficiency:0).toFixed(1)}% | Fitness: ${(d.fitness!=null?d.fitness:0).toFixed(2)} | Energy: ${(d.energy_nJ!=null?d.energy_nJ:0).toFixed(2)} nJ`);
+    return;
+  }
+  if (msg.type === 'text') {
+    if (currentAgentMsgEl) {
+      const body = currentAgentMsgEl.querySelector('.msg-body');
+      if (body) {
+        if (body.textContent === '⟳ Thinking...') body.textContent = msg.content || '';
+        else body.textContent += (msg.content || '');
+      }
+    }
+    return;
+  }
+  if (msg.type === 'tool_call') {
+    addAgentMessage('tool-call', `🔧 ${msg.name}(${JSON.stringify(msg.input||{}).slice(0,80)}...)`);
+    return;
+  }
+  if (msg.type === 'tool_result') {
+    addAgentMessage('tool-result', `✓ ${msg.name}: ${JSON.stringify(msg.result||{}).slice(0,120)}...`);
+    if (msg.name === 'parse_environment' && msg.result && msg.result.dimensionless) updateDimNumbers(msg.result.dimensionless);
+    return;
+  }
+  if (msg.type === 'done') {
+    if (currentAgentMsgEl) {
+      const body = currentAgentMsgEl.querySelector('.msg-body');
+      if (body && body.textContent === '⟳ Thinking...') body.textContent = 'Response complete.';
+    }
+    currentAgentMsgEl = null;
+    setStatus('Agent complete', 100);
+    return;
+  }
+  if (msg.type === 'error') {
+    if (currentAgentMsgEl) {
+      const body = currentAgentMsgEl.querySelector('.msg-body');
+      if (body) body.innerHTML = `⚠️ ${msg.content}`;
+      currentAgentMsgEl = null;
+    } else addAgentMessage('agent', `⚠️ ${msg.content}`);
+    setStatus(msg.content || 'Error', 0);
+  }
+}
+
+async function createSession() {
+  const body = {
+    problem_description: 'Optimize a xenobot for microplastic capture in groundwater',
+    explicit_params: {
+      viscosity_mPas: parseFloat(document.getElementById('viscosity').value),
+      temperature_C:  parseFloat(document.getElementById('temperature').value),
+      pH:             parseFloat(document.getElementById('ph').value),
+      flow_speed_cms: parseFloat(document.getElementById('flow-speed').value),
+    },
+    optimization_config: {
+      n_generations: parseInt(document.getElementById('n-gens').value),
+      bo_iterations:  parseInt(document.getElementById('bo-iters').value),
+      grad_steps:     parseInt(document.getElementById('grad-steps').value),
+      pop_size:       parseInt(document.getElementById('pop-size').value),
+      grid_size: [8, 8, 6],
+    },
+    api_key: (document.getElementById('api-key') && document.getElementById('api-key').value.trim()) || null,
+    fluid_key: (document.getElementById('fluid-select') && document.getElementById('fluid-select').value) || 'water_pure',
+    contaminant_key: (document.getElementById('contaminant-select') && document.getElementById('contaminant-select').value) || 'hdpe_microplastic',
+    flow_speed_cms: parseFloat(document.getElementById('flow-speed').value),
+    n_contaminants: parseInt(document.getElementById('n-particles').value) || 40,
+  };
+
+  const resp = await fetch('http://localhost:8000/api/session/create', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+  });
+  const data = await resp.json();
+  sessionId = data.session_id;
+  return sessionId;
+}
+
+async function startOptimization() {
+  setStatus('Creating session...', 0);
+  await createSession();
+
+  ws = new WebSocket(`ws://localhost:8000/ws/${sessionId}`);
+  ws.onmessage = handleWsMessage;
+  ws.onopen = () => {
+    ws.send(JSON.stringify({
+      action: 'start_optimization',
+      n_generations: parseInt(document.getElementById('n-gens').value),
+      bo_iterations:  parseInt(document.getElementById('bo-iters').value),
+      grad_steps:     parseInt(document.getElementById('grad-steps').value),
+      pop_size:       parseInt(document.getElementById('pop-size').value),
+      grid_size: [8, 8, 6],
+    }));
+    setStatus('Optimization running...', 10);
+    setStage('evo', 'active');
+    switchTab('metrics');
+    addMetricsLogLine('Starting NEAT evolution...');
+  };
+
+  genCount = 0;
+}
+
+async function runQuickSim() {
+  if (!currentGrid) {
+    currentGrid = generateDemoGrid();
+  }
+  if (!sessionId) await createSession();
+  setStatus('Simulating...', 20);
+  simHistory = [];
+  switchTab('metrics');
+  addMetricsLogLine('Quick simulate started...');
+  ws = new WebSocket(`ws://localhost:8000/ws/${sessionId}`);
+  ws.onmessage = handleWsMessage;
+  ws.onopen = () => {
+    ws.send(JSON.stringify({
+      action: 'simulate',
+      grid: currentGrid,
+      fluid_key: (document.getElementById('fluid-select') && document.getElementById('fluid-select').value) || 'water_pure',
+      contaminant_key: (document.getElementById('contaminant-select') && document.getElementById('contaminant-select').value) || 'hdpe_microplastic',
+      flow_speed_cms: parseFloat(document.getElementById('flow-speed').value),
+      n_contaminants: parseInt(document.getElementById('n-particles').value) || 40,
+    }));
+  };
+}
+
+function generateDemoGrid() {
+  const grid = Array.from({length:8}, () =>
+    Array.from({length:8}, () =>
+      Array.from({length:6}, () => 0)));
+  // C-shape sweeper morphology
+  for (let i=2; i<6; i++) {
+    for (let k=1; k<5; k++) {
+      grid[i][2][k] = 1; // passive spine
+      grid[i][6][k] = 3; // adhesive outer edge
+    }
+  }
+  for (let j=2; j<7; j++) grid[2][j][2] = 2; // muscle top
+  for (let j=2; j<7; j++) grid[5][j][2] = 2; // muscle bottom
+  return grid;
+}
+
+// ══════════════════════════════════════════════════════════
+// AGENT CHAT
+// ══════════════════════════════════════════════════════════
+async function sendAgentMessage() {
+  const input = document.getElementById('agent-input');
+  const messageToSend = (input && input.value.trim()) || '';
+  if (!messageToSend) return;
+  input.value = '';
+
+  addAgentMessage('user', messageToSend);
+
+  if (!sessionId) await createSession();
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    ws = new WebSocket(`ws://localhost:8000/ws/${sessionId}`);
+    ws.onmessage = handleWsMessage;
+    await new Promise(r => ws.onopen = r);
+  }
+
+  switchTab('agent');
+  currentAgentMsgEl = addAgentMessage('agent', '⟳ Thinking...');
+  ws.send(JSON.stringify({
+    action: 'run_agent',
+    message: messageToSend,
+    api_key: (document.getElementById('api-key') && document.getElementById('api-key').value.trim()) || undefined
+  }));
+}
+
+function addAgentMessage(role, text) {
+  const container = document.getElementById('agent-messages');
+  const el = document.createElement('div');
+  const roleMap = {
+    'user':        'msg msg-user',
+    'agent':       'msg msg-agent',
+    'tool-call':   'msg msg-tool-call',
+    'tool-result': 'msg msg-tool-result',
+    'optimization':'msg msg-optimization',
+  };
+  el.className = roleMap[role] || 'msg msg-agent';
+  if (role === 'agent') {
+    el.innerHTML = `<div class="msg-label">MORPHEUS AI SCIENTIST</div><div class="msg-body">${text}</div>`;
+  } else if (role === 'optimization') {
+    el.innerHTML = `<div class="msg-body">${text}</div>`;
+  } else {
+    el.innerHTML = `<div class="msg-body">${text}</div>`;
+  }
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+  return el;
+}
+
+// ══════════════════════════════════════════════════════════
+// WET LAB UPLOAD
+// ══════════════════════════════════════════════════════════
+async function uploadWetlab() {
+  if (!sessionId) { alert('Run optimization first'); return; }
+  const body = {
+    session_id:              sessionId,
+    simulated_capture_pct:   parseFloat(document.getElementById('sim-pct').value),
+    actual_capture_pct:      parseFloat(document.getElementById('actual-pct').value),
+    microscopy_notes:        document.getElementById('microscopy-notes').value,
+  };
+  const resp = await fetch('http://localhost:8000/api/wetlab/upload', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  });
+  const result = await resp.json();
+  addAgentMessage('agent',
+    `🔬 **Wet Lab Discrepancy Analysis**\n\nGap: ${result.sim_vs_actual?.gap_pct?.toFixed(1)}%\n\n${
+    (result.discrepancies||[]).map(d=>`• ${d.type}: ${d.likely_cause}`).join('\n')
+    }\n\n**Recommendations:**\n${
+    (result.recommendations||[]).map(r=>`→ ${r}`).join('\n')
+    }`);
+  switchTab('agent');
+}
+
+// ══════════════════════════════════════════════════════════
+// PROTOCOL PANEL
+// ══════════════════════════════════════════════════════════
+function generateProtocolUI(data) {
+  const el = document.getElementById('protocol-content');
+  el.innerHTML = `
+    <div class="protocol-section">
+      <h4>🎯 Organism Design</h4>
+      <div class="protocol-item">
+        <div class="step-label">BEST MORPHOLOGY</div>
+        Capture efficiency: <strong>${(data.capture_efficiency||0).toFixed(1)}%</strong> in silico<br/>
+        Fitness: ${(data.best_fitness||0).toFixed(2)} | Energy: ${(data.energy_nJ||0).toFixed(2)} nJ
+      </div>
+    </div>
+    <div class="protocol-section">
+      <h4>🧫 Cell Differentiation</h4>
+      <div class="protocol-item">
+        <div class="step-label">CARDIAC PROGENITORS (Muscle voxels)</div>
+        RPMI-1640 + B27 | BMP4 5ng/mL (d0–2) | Activin A 12.5ng/mL (d0–1) | CHIR99021 10µM (d0–2)<br/>
+        <strong>37°C, 5% CO₂, 8–12 kPa substrate | 8–10 days to beating</strong>
+      </div>
+      <div class="protocol-item">
+        <div class="step-label">ECTODERMAL SKIN CELLS (Passive + Adhesive)</div>
+        1/3× MBS | Noggin 500ng/mL (d0–3) | FGF2 10ng/mL (d1–4)<br/>
+        For adhesive: <strong>fibronectin coating 10µg/mL, 1h RT</strong><br/>
+        <strong>23°C, no CO₂, 200 mOsm | 2–3 days</strong>
+      </div>
+    </div>
+    <div class="protocol-section">
+      <h4>🔧 Assembly</h4>
+      <div class="protocol-item">
+        <div class="step-label">STEP 1</div>Dissociate cells: Trypsin-EDTA 0.25%, 3 min, 37°C
+      </div>
+      <div class="protocol-item">
+        <div class="step-label">STEP 2</div>Wash 3× Ca²⁺/Mg²⁺-free PBS
+      </div>
+      <div class="protocol-item">
+        <div class="step-label">STEP 3</div>Mix at target ratio. Pipette 1µL into agarose microwell (2%, 200µm cylindrical)
+      </div>
+      <div class="protocol-item">
+        <div class="step-label">STEP 4</div>Incubate 18h at 23°C — spontaneous E-cadherin self-assembly
+      </div>
+      <div class="protocol-item">
+        <div class="step-label">STEP 5</div>Transfer to perfusion chamber. Equilibrate 4h before assay
+      </div>
+    </div>
+    <div class="protocol-section">
+      <h4>✅ Quality Checks</h4>
+      <div class="protocol-item">Verify beating by microscopy before assembly (target: all cardiac clusters)</div>
+      <div class="protocol-item">Calcein-AM/PI viability stain: target >90% viable</div>
+      <div class="protocol-item">pH-stat monitoring during assembly: target pH 7.2–7.6</div>
+    </div>`;
+  switchTab('protocol');
+}
+
+// ══════════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['agent','metrics','protocol'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+}
+
+function setStatus(msg, pct) {
+  document.getElementById('status-pill').textContent = `● ${msg}`;
+  document.getElementById('progress-label').textContent = msg;
+  document.getElementById('progress-fill').style.width = Math.min(100,pct) + '%';
+}
+
+function setStage(id, state) {
+  const el = document.getElementById(`stage-${id}`);
+  el.className = 'stage-pill ' + state;
+}
+
+function updateDimNumbers(dim) {
+  const re = document.getElementById('dim-re');
+  const pe = document.getElementById('dim-pe');
+  const st = document.getElementById('dim-st');
+  const eta = document.getElementById('dim-eta');
+  if (dim.Re !== undefined && re) re.textContent = dim.Re.toExponential(2);
+  if (dim.Pe !== undefined && pe) pe.textContent = dim.Pe.toExponential(2);
+  if (dim.Stokes !== undefined && st) st.textContent = dim.Stokes.toExponential(2);
+  if (dim.eta_eff_mPas !== undefined && eta) eta.textContent = dim.eta_eff_mPas.toFixed(3);
+}
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  initThree();
+
+  // Show demo organism on load
+  currentGrid = generateDemoGrid();
+  renderGrid(currentGrid);
+
+  // Fluid select → update viscosity defaults
+  document.getElementById('fluid-select').addEventListener('change', e => {
+    const defaults = {
+      water_pure:        [1.002, 20,  7.0, 0.00],
+      water_groundwater: [1.1,   12,  6.8, 0.01],
+      water_wastewater:  [1.15,  25,  6.2, 0.05],
+      blood_whole:       [3.5,   37,  7.4, 0.15],
+      blood_plasma:      [1.2,   37,  7.4, 0.15],
+      synovial_fluid:    [50,    37,  7.4, 0.15],
+      mucus_airway:      [500,   37,  6.9, 0.10],
+      csf:               [0.7,   37,  7.35,0.15],
+    };
+    const d = defaults[e.target.value] || [1.002, 20, 7.4, 0.15];
+    document.getElementById('viscosity').value = d[0];
+    document.getElementById('temperature').value = d[1];
+    document.getElementById('ph').value = d[2];
+    document.getElementById('ionic').value = d[3];
+  });
+
+  // Contaminant select → update particle defaults
+  document.getElementById('contaminant-select').addEventListener('change', e => {
+    const defaults = {
+      hdpe_microplastic:        [50,  -32,  950],
+      pet_microplastic:         [30,  -41, 1380],
+      pfas_pfoa:                [0.001,-35, 1800],
+      fibrin_clot:              [5,   -15, 1100],
+      amyloid_beta:             [0.1, -20, 1200],
+      ldl_cholesterol:          [0.025,-22,1020],
+      nanoplastic_polystyrene:  [0.2, -38, 1050],
+    };
+    const d = defaults[e.target.value] || [50, -32, 950];
+    document.getElementById('particle-size').value = d[0];
+    document.getElementById('zeta').value = d[1];
+    document.getElementById('particle-density').value = d[2];
+  });
+});
+</script>
+</body>
+</html>
