@@ -1,1 +1,1247 @@
-404: Not Found
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About MorphoCapture — AI-Driven Biological Morphology Design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --bg:       #0a0e1a;
+      --bg-alt:   #050812;
+      --panel:    #111827;
+      --panel-hover: #151f33;
+      --border:   #1f2937;
+      --border-accent: #2d3f6e;
+      --accent:   #6366f1;
+      --accent2:  #10b981;
+      --accent3:  #f59e0b;
+      --text:     #e5e7eb;
+      --text-bright: #f9fafb;
+      --muted:    #6b7280;
+      --muscle:   #ef4444;
+      --adhesive: #22c55e;
+      --stiff:    #a855f7;
+      --passive:  #38bdf8;
+    }
+    body { 
+      background:var(--bg); 
+      color:var(--text); 
+      font-family:'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      line-height:1.6;
+      overflow-x:hidden;
+      font-weight:400;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      position:relative;
+    }
+    body::before {
+      content:'';
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.02) 0%, transparent 60%);
+      pointer-events:none;
+      z-index:0;
+    }
+
+    /* Header */
+    header {
+      background:rgba(17, 24, 39, 0.85); 
+      border-bottom:1px solid var(--border);
+      padding:20px 48px; 
+      display:flex; 
+      align-items:center; 
+      gap:24px;
+      position:sticky;
+      top:0;
+      z-index:1000;
+      backdrop-filter:blur(20px);
+      -webkit-backdrop-filter:blur(20px);
+    }
+    .logo { 
+      font-size:22px; 
+      font-weight:700; 
+      letter-spacing:-0.8px;
+      text-decoration:none;
+      color:var(--text-bright);
+      transition:all 0.2s;
+      font-family:'Space Grotesk', system-ui, sans-serif;
+    }
+    .logo:hover { 
+      color:var(--accent);
+      letter-spacing:-0.5px;
+    }
+    .logo span { 
+      color:var(--accent); 
+      font-weight:600;
+    }
+    .nav-links {
+      display:flex;
+      gap:32px;
+      margin-left:48px;
+    }
+    .nav-link {
+      color:var(--muted);
+      text-decoration:none;
+      font-size:14px;
+      font-weight:500;
+      transition:all 0.2s;
+      position:relative;
+      letter-spacing:0.3px;
+    }
+    .nav-link:hover { 
+      color:var(--text-bright);
+    }
+    .nav-link.active {
+      color:var(--text-bright);
+    }
+    .nav-link.active::after {
+      content:'';
+      position:absolute;
+      bottom:-21px;
+      left:0;
+      right:0;
+      height:2px;
+      background:var(--accent);
+    }
+
+    /* Hero Section with Video */
+    .hero-with-video {
+      max-width:1400px;
+      margin:0 auto;
+      padding:80px 48px 120px;
+      position:relative;
+      overflow:hidden;
+    }
+    .hero-with-video::before {
+      content:'';
+      position:absolute;
+      top:-100px;
+      left:0;
+      width:100%;
+      height:700px;
+      background:radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
+                 radial-gradient(circle at 70% 60%, rgba(16, 185, 129, 0.08) 0%, transparent 60%);
+      pointer-events:none;
+      z-index:0;
+    }
+    .hero-grid {
+      display:grid;
+      grid-template-columns:1.1fr 1fr;
+      gap:80px;
+      align-items:center;
+      position:relative;
+      z-index:1;
+      opacity:0;
+      animation:fadeInUp 1s ease-out 0.2s forwards;
+    }
+    @keyframes fadeInUp {
+      from { opacity:0; transform:translateY(30px); }
+      to { opacity:1; transform:translateY(0); }
+    }
+    
+    /* Hero Left Content */
+    .hero-left {
+      display:flex;
+      flex-direction:column;
+      gap:32px;
+    }
+    .hero-headline {
+      font-size:52px;
+      font-weight:700;
+      line-height:1.15;
+      color:var(--text-bright);
+      letter-spacing:-2px;
+      margin:0;
+      opacity:0;
+      animation:fadeInUp 1s ease-out 0.2s forwards;
+      font-family:'Space Grotesk', system-ui, sans-serif;
+    }
+    .hero-headline .gradient-text {
+      background:linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      font-weight:700;
+      display:inline;
+    }
+    .hero-description {
+      font-size:18px;
+      line-height:1.8;
+      color:var(--text);
+      margin:0;
+      max-width:600px;
+      opacity:0;
+      animation:fadeInUp 1s ease-out 0.4s forwards;
+    }
+    .hero-stats-inline {
+      display:flex;
+      gap:32px;
+      margin-top:12px;
+      opacity:0;
+      animation:fadeInUp 1s ease-out 0.6s forwards;
+    }
+    .stat-inline {
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .stat-inline-value {
+      font-size:15px;
+      font-weight:700;
+      color:var(--accent);
+      font-family:'Space Grotesk', sans-serif;
+      letter-spacing:-0.5px;
+    }
+    .stat-inline-label {
+      font-size:13px;
+      color:var(--muted);
+      font-weight:400;
+      letter-spacing:0.2px;
+      line-height:1.4;
+    }
+    
+    /* Hero Right Video */
+    .hero-right {
+      position:relative;
+      opacity:0;
+      animation:fadeInUp 1s ease-out 0.5s forwards;
+      margin-top:40px;
+    }
+    .video-showcase {
+      position:relative;
+    }
+    .video-showcase::before {
+      content:'';
+      position:absolute;
+      inset:-40px;
+      background:radial-gradient(circle at center, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      pointer-events:none;
+      z-index:0;
+      animation:videoPulse 4s ease-in-out infinite;
+    }
+    @keyframes videoPulse {
+      0%, 100% { opacity:0.3; transform:scale(1); }
+      50% { opacity:0.6; transform:scale(1.05); }
+    }
+    .video-container-hero {
+      position:relative;
+      width:100%;
+      border:1px solid var(--border-accent);
+      border-radius:8px;
+      overflow:hidden;
+      background:var(--panel);
+      box-shadow:0 20px 60px rgba(0, 0, 0, 0.4), 
+                  0 0 0 1px rgba(99, 102, 241, 0.1),
+                  0 0 40px rgba(99, 102, 241, 0.1);
+      transition:all 0.4s ease;
+      z-index:1;
+      max-height:500px;
+    }
+    .video-container-hero:hover {
+      border-color:var(--accent);
+      box-shadow:0 25px 80px rgba(99, 102, 241, 0.25), 
+                  0 0 0 1px var(--accent),
+                  0 0 60px rgba(99, 102, 241, 0.2);
+      transform:translateY(-4px) scale(1.02);
+    }
+    .video-container-hero video {
+      width:100%;
+      height:auto;
+      display:block;
+      background:var(--bg);
+      margin-bottom:-20px;
+    }
+
+    /* Content Container */
+    .container {
+      max-width:1200px;
+      margin:0 auto;
+      padding:80px 48px 120px;
+      position:relative;
+      z-index:1;
+    }
+
+    /* Section */
+    .section {
+      margin-bottom:120px;
+      opacity:0;
+      transform:translateY(40px);
+      transition:opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+                  transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .section.visible {
+      opacity:1;
+      transform:translateY(0);
+    }
+    .section:last-child {
+      margin-bottom:0;
+    }
+    .section-label {
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:3px;
+      text-transform:uppercase;
+      color:var(--accent);
+      margin-bottom:20px;
+      font-family:'Inter', sans-serif;
+      opacity:0.8;
+      display:inline-block;
+      position:relative;
+    }
+    .section-label::after {
+      content:'';
+      position:absolute;
+      bottom:-10px;
+      left:0;
+      width:50px;
+      height:2px;
+      background:linear-gradient(90deg, var(--accent), transparent);
+      opacity:0.8;
+    }
+    .section-title {
+      font-size:40px;
+      font-weight:700;
+      margin-bottom:36px;
+      color:var(--text-bright);
+      letter-spacing:-1.5px;
+      line-height:1.2;
+      font-family:'Space Grotesk', system-ui, sans-serif;
+    }
+    .section-text {
+      font-size:17px;
+      color:var(--text);
+      margin-bottom:24px;
+      line-height:1.75;
+      max-width:100%;
+      font-weight:400;
+    }
+    .section-text:last-of-type {
+      margin-bottom:0;
+    }
+    
+    /* Large quote style for mission */
+    .mission-statement {
+      font-size:32px;
+      font-weight:700;
+      color:var(--text-bright);
+      line-height:1.4;
+      margin-bottom:40px;
+      letter-spacing:-1px;
+      border-left:4px solid var(--accent);
+      padding-left:40px;
+      position:relative;
+      font-family:'Space Grotesk', system-ui, sans-serif;
+    }
+    .mission-statement::before {
+      content:'';
+      position:absolute;
+      left:-4px;
+      top:0;
+      width:4px;
+      height:0%;
+      background:linear-gradient(180deg, var(--accent), var(--accent2));
+      animation:fillBar 2s ease-out 0.5s forwards;
+    }
+    @keyframes fillBar {
+      to { height:100%; }
+    }
+
+    /* Feature Grid */
+    .feature-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
+      gap:24px;
+      margin-top:40px;
+    }
+    .feature-card {
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:4px;
+      padding:32px;
+      transition:all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position:relative;
+      overflow:hidden;
+    }
+    .feature-card::after {
+      content:'';
+      position:absolute;
+      top:0;
+      left:0;
+      width:2px;
+      height:100%;
+      background:var(--accent);
+      transform:scaleY(0);
+      transform-origin:top;
+      transition:transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .feature-card:hover {
+      background:var(--panel-hover);
+      border-color:var(--border-accent);
+      transform:translateX(4px);
+    }
+    .feature-card:hover::after {
+      transform:scaleY(1);
+    }
+    .feature-label {
+      font-size:11px;
+      font-weight:600;
+      letter-spacing:1.2px;
+      text-transform:uppercase;
+      color:var(--accent);
+      margin-bottom:12px;
+      font-family:'JetBrains Mono', monospace;
+    }
+    .feature-title {
+      font-size:20px;
+      font-weight:600;
+      margin-bottom:16px;
+      color:var(--text-bright);
+      letter-spacing:-0.3px;
+    }
+    .feature-desc {
+      font-size:14px;
+      color:var(--muted);
+      line-height:1.7;
+    }
+
+    /* Architecture Diagram */
+    .arch-box {
+      background:var(--bg-alt);
+      border:1px solid var(--border);
+      border-radius:2px;
+      padding:40px;
+      margin-top:32px;
+      font-family:'JetBrains Mono', monospace;
+      position:relative;
+    }
+    .arch-box::before {
+      content:'SYSTEM ARCHITECTURE';
+      position:absolute;
+      top:-10px;
+      left:20px;
+      background:var(--bg);
+      padding:0 8px;
+      font-size:10px;
+      letter-spacing:1.5px;
+      color:var(--accent);
+    }
+    .arch-box pre {
+      color:var(--text);
+      font-size:13px;
+      line-height:2;
+      overflow-x:auto;
+    }
+    .arch-layer {
+      color:var(--accent2);
+      font-weight:600;
+    }
+    .arch-component {
+      color:var(--accent);
+      font-weight:500;
+    }
+
+    /* Tools Grid */
+    .tools-grid {
+      display:grid;
+      grid-template-columns:repeat(2, 1fr);
+      gap:2px;
+      margin-top:32px;
+      background:var(--border);
+      border:1px solid var(--border);
+    }
+    .tool-item {
+      background:var(--panel);
+      padding:24px 28px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      transition:background 0.2s;
+    }
+    .tool-item:hover {
+      background:var(--panel-hover);
+    }
+    .tool-name {
+      color:var(--accent2);
+      font-weight:500;
+      font-size:13px;
+      font-family:'JetBrains Mono', monospace;
+      letter-spacing:0.3px;
+    }
+    .tool-desc {
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
+    }
+
+    /* Pipeline Stages */
+    .pipeline {
+      display:grid;
+      grid-template-columns:1fr auto 1fr auto 1fr;
+      gap:0;
+      margin-top:48px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      position:relative;
+    }
+    .stage {
+      padding:32px 28px;
+      background:var(--panel);
+      position:relative;
+      border-right:1px solid var(--border);
+    }
+    .stage:last-of-type {
+      border-right:none;
+    }
+    .stage-num {
+      font-size:10px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:2px;
+      margin-bottom:12px;
+      font-family:'JetBrains Mono', monospace;
+    }
+    .stage-title {
+      font-size:18px;
+      font-weight:600;
+      color:var(--text-bright);
+      margin-bottom:12px;
+      letter-spacing:-0.3px;
+    }
+    .stage-desc {
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+    .arrow {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:32px;
+      background:var(--bg-alt);
+      color:var(--accent);
+      font-size:20px;
+      font-weight:300;
+    }
+
+    /* Use Cases */
+    .use-case {
+      background:var(--panel);
+      border-left:2px solid var(--accent);
+      border-radius:0;
+      padding:32px 36px;
+      margin-bottom:24px;
+      position:relative;
+      transition:all 0.2s;
+    }
+    .use-case:hover {
+      background:var(--panel-hover);
+      border-left-width:4px;
+    }
+    .use-case-num {
+      position:absolute;
+      top:32px;
+      left:-20px;
+      width:40px;
+      height:40px;
+      background:var(--accent);
+      color:white;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:700;
+      font-size:16px;
+    }
+    .use-case-title {
+      font-size:20px;
+      font-weight:600;
+      color:var(--text-bright);
+      margin-bottom:16px;
+      letter-spacing:-0.3px;
+    }
+    .use-case-desc {
+      font-size:14px;
+      color:var(--text);
+      margin-bottom:16px;
+      line-height:1.7;
+    }
+    .use-case-desc strong {
+      color:var(--text-bright);
+      font-weight:600;
+    }
+    .use-case-tech {
+      font-size:12px;
+      color:var(--muted);
+      font-family:'JetBrains Mono', monospace;
+      background:var(--bg-alt);
+      padding:10px 14px;
+      border-radius:4px;
+      border-left:2px solid var(--accent3);
+    }
+
+    /* Stats */
+    .stats {
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:2px;
+      margin-top:48px;
+      background:var(--border);
+      border:1px solid var(--border);
+    }
+    .stat-card {
+      background:var(--panel);
+      padding:32px 24px;
+      text-align:center;
+      transition:background 0.2s;
+    }
+    .stat-card:hover {
+      background:var(--panel-hover);
+    }
+    .stat-value {
+      font-size:48px;
+      font-weight:700;
+      color:var(--accent);
+      margin-bottom:12px;
+      letter-spacing:-2px;
+      font-family:'JetBrains Mono', monospace;
+    }
+    .stat-label {
+      font-size:12px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:1.5px;
+      font-weight:500;
+    }
+
+    /* Footer */
+    footer {
+      background:var(--panel);
+      border-top:1px solid var(--border);
+      padding:64px 48px 48px;
+      margin-top:100px;
+      position:relative;
+      z-index:1;
+    }
+    footer::before {
+      content:'';
+      position:absolute;
+      top:0;
+      left:50%;
+      transform:translateX(-50%);
+      width:200px;
+      height:1px;
+      background:linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+    .footer-content {
+      max-width:1100px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:2fr 1fr 1fr;
+      gap:64px;
+    }
+    .footer-section h4 {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:2.5px;
+      color:var(--accent);
+      margin-bottom:20px;
+      font-weight:700;
+      font-family:'Inter', sans-serif;
+    }
+    .footer-section p {
+      font-size:14px;
+      color:var(--muted);
+      line-height:1.8;
+    }
+    .footer-links {
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+    .footer-links a {
+      color:var(--text);
+      text-decoration:none;
+      font-size:14px;
+      transition:all 0.2s;
+      position:relative;
+      padding-left:12px;
+    }
+    .footer-links a::before {
+      content:'→';
+      position:absolute;
+      left:0;
+      opacity:0;
+      transition:all 0.2s;
+      color:var(--accent);
+    }
+    .footer-links a:hover {
+      color:var(--accent);
+      padding-left:20px;
+    }
+    .footer-links a:hover::before {
+      opacity:1;
+    }
+    .footer-bottom {
+      max-width:1100px;
+      margin:48px auto 0;
+      padding-top:32px;
+      border-top:1px solid var(--border);
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+      letter-spacing:0.5px;
+    }
+
+    /* Number accent */
+    .year {
+      color:var(--accent);
+      font-weight:700;
+      font-family:'JetBrains Mono', monospace;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .hero-grid { gap:60px; }
+      .hero-headline { font-size:44px; letter-spacing:-1.8px; }
+      .hero-description { font-size:17px; }
+    }
+    @media (max-width: 1024px) {
+      .hero-with-video { padding:50px 32px 80px; }
+      .hero-grid { 
+        grid-template-columns:1fr; 
+        gap:50px; 
+      }
+      .hero-left { 
+        max-width:700px;
+        margin:0 auto;
+      }
+      .hero-headline { font-size:40px; letter-spacing:-1.5px; }
+      .hero-description { max-width:100%; }
+      .hero-stats-inline { justify-content:flex-start; }
+      .video-container-hero { max-width:600px; margin:0 auto; }
+      .col-card { padding:32px; }
+      .footer-content { grid-template-columns:1fr; }
+      .two-col { grid-template-columns:1fr; gap:24px; }
+      .app-grid { grid-template-columns:1fr; gap:24px; }
+      .col-card { padding:32px; }
+      .mission-statement { font-size:24px; }
+      .section-title { font-size:36px; }
+    }
+    @media (max-width: 768px) {
+      header { padding:16px 24px; }
+      .nav-links { margin-left:24px; gap:20px; }
+      .hero-with-video { padding:40px 24px 60px; }
+      .hero-grid { gap:40px; }
+      .hero-headline { font-size:34px; letter-spacing:-1.2px; line-height:1.2; }
+      .hero-description { font-size:16px; line-height:1.7; }
+      .hero-stats-inline { 
+        flex-wrap:wrap;
+        gap:24px;
+      }
+      .stat-inline-value { font-size:14px; }
+      .stat-inline-label { font-size:11px; }
+      .video-container-hero { 
+        border-radius:4px;
+        max-width:100%;
+      }
+      .hero-right { margin-top:20px; }
+      .container { padding:50px 24px 80px; }
+      .section { margin-bottom:80px; }
+      .section-title { font-size:28px; letter-spacing:-1px; }
+      .divider { margin:70px 0; }
+      .highlight-box { 
+        padding:32px 28px; 
+        border-radius:6px;
+      }
+      .highlight-box h3 { font-size:22px; letter-spacing:-0.6px; }
+      .highlight-box p { font-size:15px; line-height:1.7; margin-bottom:20px; }
+      .highlight-box p:last-child { margin-bottom:0; }
+      .col-card { padding:28px; border-radius:6px; }
+      .col-text { font-size:15px; line-height:1.7; margin-bottom:16px; }
+      .section-text { font-size:15px; line-height:1.7; }
+      .divider { margin:56px auto; }
+    }
+
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width:8px; }
+    ::-webkit-scrollbar-track { background:var(--bg); }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+    ::-webkit-scrollbar-thumb:hover { background:var(--muted); }
+
+    /* Code inline */
+    code {
+      background:var(--bg-alt);
+      color:var(--accent2);
+      padding:4px 10px;
+      border-radius:4px;
+      font-size:13px;
+      font-family:'Space Grotesk', monospace;
+      border:1px solid var(--border);
+      font-weight:500;
+    }
+    
+    /* Year highlight */
+    .year {
+      color:var(--accent);
+      font-weight:700;
+      font-family:'Space Grotesk', sans-serif;
+      background:rgba(99, 102, 241, 0.1);
+      padding:2px 8px;
+      border-radius:4px;
+      letter-spacing:-0.5px;
+    }
+    
+    /* Info Table */
+    .info-table {
+      margin-top:32px;
+      border:1px solid var(--border);
+      background:var(--panel);
+    }
+    .info-row {
+      display:grid;
+      grid-template-columns:200px 1fr;
+      border-bottom:1px solid var(--border);
+    }
+    .info-row:last-child {
+      border-bottom:none;
+    }
+    .info-label {
+      padding:20px 24px;
+      background:var(--bg-alt);
+      font-size:12px;
+      font-weight:600;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:1px;
+      border-right:1px solid var(--border);
+    }
+    .info-value {
+      padding:20px 24px;
+      font-size:14px;
+      color:var(--text);
+      line-height:1.6;
+    }
+
+    /* Highlight box */
+    .highlight-box {
+      background:rgba(17, 24, 39, 0.6);
+      border:1px solid var(--border-accent);
+      border-radius:8px;
+      padding:48px 56px;
+      margin:0;
+      position:relative;
+      overflow:hidden;
+    }
+    .highlight-box::before {
+      content:'';
+      position:absolute;
+      top:0;
+      left:0;
+      width:3px;
+      height:100%;
+      background:linear-gradient(180deg, var(--accent), var(--accent2));
+    }
+    .highlight-box h3 {
+      color:var(--text-bright);
+      font-size:24px;
+      margin-bottom:24px;
+      font-weight:600;
+      letter-spacing:-0.8px;
+      line-height:1.3;
+      position:relative;
+      z-index:1;
+      font-family:'Space Grotesk', system-ui, sans-serif;
+    }
+    .highlight-box p {
+      font-size:16px;
+      line-height:1.75;
+      color:var(--text);
+      position:relative;
+      z-index:1;
+    }
+    .highlight-box p strong {
+      color:var(--text-bright);
+      font-weight:600;
+    }
+    
+    /* Two column layout */
+    .two-col {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:32px;
+      align-items:start;
+      position:relative;
+    }
+    .col-card {
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:40px;
+      transition:all 0.3s ease;
+      position:relative;
+      overflow:hidden;
+    }
+    .col-card::before {
+      content:'';
+      position:absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:3px;
+      background:linear-gradient(90deg, var(--accent), var(--accent2));
+      transform:scaleX(0);
+      transform-origin:left;
+      transition:transform 0.3s ease;
+    }
+    .col-card:hover {
+      background:var(--panel-hover);
+      border-color:var(--border-accent);
+      transform:translateY(-4px);
+    }
+    .col-card:hover::before {
+      transform:scaleX(1);
+    }
+    .col-text {
+      font-size:16px;
+      line-height:1.8;
+      color:var(--text);
+      margin-bottom:20px;
+    }
+    .col-text:last-child {
+      margin-bottom:0;
+    }
+    .card-title {
+      font-size:18px;
+      font-weight:600;
+      color:var(--text-bright);
+      margin-bottom:16px;
+      font-family:'Space Grotesk', sans-serif;
+      letter-spacing:-0.3px;
+    }
+    .app-grid {
+      display:grid;
+      grid-template-columns:repeat(2, 1fr);
+      gap:24px;
+      margin-top:48px;
+    }
+    
+    /* Section divider */
+    .divider {
+      height:1px;
+      background:var(--border);
+      margin:100px 0;
+      width:100%;
+      position:relative;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">Morpho<span>Capture</span></a>
+  <nav class="nav-links">
+    <a href="about.html" class="nav-link active">About</a>
+    <a href="index.html" class="nav-link">Platform</a>
+  </nav>
+</header>
+
+<!-- HERO SECTION WITH VIDEO -->
+<section class="hero-with-video">
+  <div class="hero-grid">
+    <div class="hero-left">
+      <h1 class="hero-headline">Making the design of <span class="gradient-text">living machines</span> accessible to every researcher</h1>
+      
+      <p class="hero-description">
+        Transform xenobot development from handcrafted experiments into scalable AI-driven design. Our platform generates optimized biological structures with detailed protocols — accelerating discovery across synthetic biology, medicine, and environmental restoration.
+      </p>
+      
+      <div class="hero-stats-inline">
+        <div class="stat-inline">
+          <div class="stat-inline-value">AI-Powered</div>
+          <div class="stat-inline-label">Evolutionary Design</div>
+        </div>
+        <div class="stat-inline">
+          <div class="stat-inline-value">Physics-Based</div>
+          <div class="stat-inline-label">Simulation Engine</div>
+        </div>
+        <div class="stat-inline">
+          <div class="stat-inline-value">Automated</div>
+          <div class="stat-inline-label">Protocol Generation</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="hero-right">
+      <div class="video-showcase">
+        <div class="video-container-hero">
+          <video id="about-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
+            <source src="about.mov" type="video/mp4">
+            Your browser does not support HTML5 video playback.
+          </video>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<div class="container">
+
+  <!-- OVERVIEW -->
+  <section class="section">
+    <div class="section-label">Overview</div>
+    <h2 class="section-title">Building Infrastructure for Programmable Biology</h2>
+    <p class="section-text">
+      Biology is rapidly emerging as the next great engineering platform. MorphoCapture addresses a fundamental barrier in this transition: the inability to systematically design and develop living machines at scale.
+    </p>
+    <p class="section-text">
+      Our platform transforms xenobot development from a manual, specialized process into an accessible, AI-driven workflow. By combining evolutionary algorithms, physics-based simulation, and automated protocol generation, we enable researchers to design functional biological structures without requiring specialized computational infrastructure or extensive manual fabrication expertise.
+    </p>
+    <p class="section-text">
+      This approach unlocks applications across multiple domains including targeted drug delivery, environmental remediation, tissue engineering, and cellular-scale manufacturing.
+    </p>
+  </section>
+  
+  <div class="divider"></div>
+
+  <!-- BACKGROUND -->
+  <section class="section">
+    <div class="section-label">Background</div>
+    <h2 class="section-title">Scientific Foundation</h2>
+    
+    <p class="section-text">
+      In <span class="year">2020</span>, researchers at Tufts University and the University of Vermont demonstrated that stem cells from Xenopus laevis embryos, when isolated and placed in culture, spontaneously self-organize into novel multicellular structures with emergent behaviors. These xenobots exhibited locomotion, collective behavior, and self-repair capabilities without genetic modification.
+    </p>
+    
+    <div class="two-col" style="margin-top:48px;">
+      <div class="col-card">
+        <h3 class="card-title">Design Methodology</h3>
+        <p class="col-text">
+          The original design process utilized evolutionary algorithms running on supercomputing infrastructure. The system simulated thousands of cellular configurations, evaluating each for functional criteria such as directed movement or object manipulation. Successful designs were then manually assembled using micromanipulation techniques.
+        </p>
+      </div>
+      <div class="col-card">
+        <h3 class="card-title">Key Findings</h3>
+        <p class="col-text">
+          Subsequent research in <span class="year">2021</span> demonstrated kinematic replication capabilities. Xenobots could aggregate dispersed cells and compress them into new functional structures, representing the first instance of AI-designed biological systems exhibiting reproductive behavior. This validated the potential for programmable living machines.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- CHALLENGE -->
+  <section class="section">
+    <div class="section-label">Problem Statement</div>
+    <h2 class="section-title">Current Limitations</h2>
+    
+    <p class="section-text">
+      Despite their demonstrated potential across biomedical, environmental, and manufacturing applications, xenobots remain constrained to a small number of specialized research facilities. This limitation stems from systemic barriers in the design and fabrication pipeline.
+    </p>
+    
+    <div class="two-col" style="margin-top:48px;">
+      <div class="col-card">
+        <h3 class="card-title">Technical Barriers</h3>
+        <p class="col-text">
+          Design requires access to high-performance computing clusters for evolutionary simulation. Fabrication demands specialized micromanipulation equipment and expertise. The end-to-end process is time-intensive, requiring weeks to months per design iteration.
+        </p>
+      </div>
+      <div class="col-card">
+        <h3 class="card-title">Access Barriers</h3>
+        <p class="col-text">
+          Most research institutions lack the computational infrastructure, fabrication facilities, and cross-disciplinary expertise required. This creates a significant bottleneck in translating xenobot technology from fundamental research to practical application across medicine, environmental science, and biotechnology.
+        </p>
+      </div>
+    </div>
+  </section>
+  
+  <div class="divider"></div>
+
+  <!-- SOLUTION -->
+  <section class="section">
+    <div class="section-label">Platform</div>
+    <h2 class="section-title">MorphoCapture System Architecture</h2>
+    
+    <div class="highlight-box">
+      <h3>Automated Design-to-Protocol Pipeline</h3>
+      <p style="margin-top:28px;">
+        MorphoCapture provides an end-to-end platform for xenobot development. Researchers specify functional objectives through a structured interface. The system employs evolutionary algorithms and physics-based simulation to generate optimized cellular morphologies, validates designs through virtual testing, and produces detailed fabrication protocols.
+      </p>
+      <p style="margin-top:24px;">
+        The platform architecture consists of three integrated components: a generative design engine utilizing evolutionary computation, a soft-body physics simulator for behavioral prediction, and an automated protocol generator that translates digital designs into laboratory procedures. This eliminates the need for specialized computational infrastructure while maintaining scientific rigor.
+      </p>
+    </div>
+    
+    <div class="two-col" style="margin-top:56px;">
+      <div class="col-card">
+        <h3 class="card-title">Iterative Refinement</h3>
+        <p class="col-text">
+          Experimental results from fabricated designs feed back into the optimization pipeline. This closed-loop approach enables continuous model improvement and builds a comprehensive dataset of structure-function relationships in biological machines.
+        </p>
+      </div>
+      <div class="col-card">
+        <h3 class="card-title">Research Accessibility</h3>
+        <p class="col-text">
+          By abstracting computational complexity and providing standardized protocols, MorphoCapture makes xenobot development accessible to any laboratory with basic cell culture capabilities. This democratization accelerates research and enables broader application development.
+        </p>
+      </div>
+    </div>
+  </section>
+  
+  <div class="divider"></div>
+  
+  <!-- APPLICATIONS -->
+  <section class="section">
+    <div class="section-label">Applications</div>
+    <h2 class="section-title">Target Domains</h2>
+    
+    <p class="section-text">
+      Xenobot technology enables applications that require biocompatibility, biodegradability, and autonomous behavior at cellular scales. MorphoCapture facilitates rapid prototyping and optimization for domain-specific requirements.
+    </p>
+    
+    <div class="app-grid">
+      <div class="col-card">
+        <h3 class="card-title">Biomedical</h3>
+        <p class="col-text">
+          Targeted drug delivery to specific tissues, plaque removal from arterial walls, minimally invasive surgical assistance, and cellular-level diagnostics. Biocompatibility and biodegradability eliminate concerns about long-term implant complications.
+        </p>
+      </div>
+      
+      <div class="col-card">
+        <h3 class="card-title">Environmental</h3>
+        <p class="col-text">
+          Microplastic remediation in aquatic environments, toxin detection and neutralization, localized pollutant sequestration, and ecosystem monitoring at micro scales. Self-biodegradation prevents secondary contamination.
+        </p>
+      </div>
+      
+      <div class="col-card">
+        <h3 class="card-title">Tissue Engineering</h3>
+        <p class="col-text">
+          Scaffold-free tissue construction, vascular network formation, cellular organization and patterning, and developmental biology research. Living machines can guide and facilitate complex tissue assembly processes.
+        </p>
+      </div>
+      
+      <div class="col-card">
+        <h3 class="card-title">Research Tools</h3>
+        <p class="col-text">
+          Experimental platforms for developmental biology, cellular mechanics studies, morphogenesis investigation, and testing hypotheses about collective cellular behavior and self-organization principles.
+        </p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Back to top button -->
+<div id="back-to-top" style="position:fixed; bottom:40px; right:40px; width:50px; height:50px; background:var(--panel); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0; transition:all 0.3s; z-index:1000; font-size:20px; color:var(--accent);">
+  ↑
+</div>
+
+<script>
+// Video autoplay handling
+const video = document.getElementById('about-video');
+if (video) {
+  // Ensure autoplay works
+  video.play().catch(e => {
+    console.log('Autoplay prevented, video will play when user interacts');
+    // If autoplay is blocked, show controls
+    video.setAttribute('controls', 'controls');
+  });
+  
+  // Error handling
+  video.addEventListener('error', function(e) {
+    console.error('Video error:', e);
+    const container = video.parentElement;
+    container.innerHTML = `
+      <div style="padding:60px 40px; text-align:center; color:var(--muted); background:var(--panel); border-radius:8px;">
+        <div style="font-size:15px; margin-bottom:16px; color:var(--text);">Video playback not supported</div>
+        <div style="font-size:13px; line-height:1.8; color:var(--muted);">
+          Try opening in Safari or <a href="about.mov" download style="color:var(--accent); text-decoration:none;">download video</a>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// Intersection Observer for scroll animations
+const observerOptions = {
+  threshold: 0.15,
+  rootMargin: '0px 0px -100px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, observerOptions);
+
+// Back to top button
+const backToTop = document.getElementById('back-to-top');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 500) {
+    backToTop.style.opacity = '1';
+    backToTop.style.transform = 'scale(1)';
+  } else {
+    backToTop.style.opacity = '0';
+    backToTop.style.transform = 'scale(0.8)';
+  }
+});
+backToTop.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// Observe all sections
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.section').forEach(section => {
+    observer.observe(section);
+  });
+});
+</script>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-content">
+    <div class="footer-section">
+      <h4>MorphoCapture</h4>
+      <p>
+        AI-driven platform for biological morphology design. Making xenobot development accessible to researchers worldwide.
+      </p>
+    </div>
+    
+    <div class="footer-section">
+      <h4>Navigation</h4>
+      <div class="footer-links">
+        <a href="index.html">Application</a>
+        <a href="about.html">About</a>
+      </div>
+    </div>
+    
+    <div class="footer-section">
+      <h4>Technology</h4>
+      <p style="font-size:13px;">
+        FastAPI • PyTorch • Claude • Three.js
+      </p>
+    </div>
+  </div>
+  
+  <div class="footer-bottom">
+    Building the infrastructure to program biology
+  </div>
+</footer>
+
+</body>
+</html>
