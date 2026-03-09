@@ -385,10 +385,6 @@
           <div class="label">Generation</div>
           <div class="value" id="metric-gen">—</div>
         </div>
-        <div class="metric-chip">
-          <div class="label">Energy (nJ)</div>
-          <div class="value" id="metric-energy">—</div>
-        </div>
       </div>
 
       <div class="canvas-legend">
@@ -702,7 +698,7 @@ function handleWsMessage(e) {
     const d = msg.data;
     document.getElementById('metric-capture').textContent = (d.capture_efficiency || 0).toFixed(1) + '%';
     document.getElementById('metric-fitness').textContent = (d.best_fitness || 0).toFixed(1);
-    document.getElementById('metric-energy').textContent = (d.energy_nJ || 0).toFixed(2);
+    // document.getElementById('metric-energy').textContent = (d.energy_nJ || 0).toFixed(2);
     if (d.best_grid) {
       currentGrid = d.best_grid;
       renderGrid(d.best_grid);
@@ -721,7 +717,7 @@ function handleWsMessage(e) {
     const d = msg.data;
     document.getElementById('metric-capture').textContent = (d.capture_efficiency != null ? d.capture_efficiency : 0).toFixed(1) + '%';
     document.getElementById('metric-fitness').textContent = (d.fitness != null ? d.fitness : 0).toFixed(1);
-    document.getElementById('metric-energy').textContent = (d.energy_nJ != null ? d.energy_nJ : 0).toFixed(2);
+    // document.getElementById('metric-energy').textContent = (d.energy_nJ != null ? d.energy_nJ : 0).toFixed(2);
     setStatus(`Sim complete — Capture: ${(d.capture_efficiency!=null?d.capture_efficiency:0).toFixed(1)}%`, 100);
     addMetricsLogLine(`Quick simulate complete — Capture: ${(d.capture_efficiency!=null?d.capture_efficiency:0).toFixed(1)}% | Fitness: ${(d.fitness!=null?d.fitness:0).toFixed(2)} | Energy: ${(d.energy_nJ!=null?d.energy_nJ:0).toFixed(2)} nJ`);
     
