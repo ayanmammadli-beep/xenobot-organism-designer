@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
-  <title>Morpheus — EDA Suite for Living Machines</title>
+  <title>MorphoCapture — EDA Suite for Living Machines</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
@@ -33,11 +33,18 @@
       background:var(--panel); border-bottom:1px solid var(--border);
       padding:12px 24px; display:flex; align-items:center; gap:16px; flex-shrink:0;
     }
-    .logo { font-size:20px; font-weight:800; letter-spacing:-0.5px; }
+    .logo { font-size:20px; font-weight:800; letter-spacing:-0.5px; text-decoration:none; color:var(--text); cursor:pointer; transition:all 0.2s; }
+    .logo:hover { color:var(--accent); }
     .logo span { color:var(--accent); }
     .tagline { color:var(--muted); font-size:13px; }
+    .nav-link {
+      color:var(--muted); text-decoration:none; font-size:14px; font-weight:500;
+      transition:all 0.2s; padding:8px 16px; border-radius:6px; border:1px solid transparent;
+    }
+    .nav-link:hover { color:var(--text); border-color:var(--border); background:rgba(99, 102, 241, 0.05); }
+    .nav-link.active { color:var(--text); border:1px solid var(--border); background:rgba(99, 102, 241, 0.1); }
     .status-pill { margin-left:auto; padding:4px 12px; border-radius:999px; font-size:12px;
-                   background:#1a2744; border:1px solid var(--accent); color:var(--accent); }
+                   background:#1a2744; border:1px solid var(--accent); color:var(--accent); cursor:default; }
 
     /* ── Main layout ── */
     .workspace { display:grid; grid-template-columns:380px 1fr 360px;
@@ -95,6 +102,33 @@
     }
     .legend-item { display:flex; align-items:center; gap:8px; }
     .legend-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+
+    /* Real-time picture box */
+    .picture-box {
+      position:absolute; bottom:16px; right:16px;
+      background:rgba(10,14,26,0.85); border:1px solid var(--border);
+      backdrop-filter:blur(8px); padding:12px; border-radius:8px;
+      width:180px; height:180px;
+      display:flex; flex-direction:column; gap:8px;
+    }
+    .picture-box-title {
+      font-size:10px; color:var(--muted); text-transform:uppercase;
+      letter-spacing:0.5px; font-weight:600;
+    }
+    .picture-frame {
+      flex:1; background:#0a0e1a; border:1px solid var(--border);
+      border-radius:6px; overflow:hidden; display:flex;
+      align-items:center; justify-content:center;
+      position:relative;
+    }
+    .picture-frame img {
+      width:100%; height:100%; object-fit:cover;
+      transition:opacity 0.3s ease;
+    }
+    .picture-placeholder {
+      color:var(--muted); font-size:11px; text-align:center;
+      padding:20px 10px; line-height:1.4;
+    }
 
     /* ── Right panel: Agent + Metrics ── */
     .panel-right { background:var(--panel); border-left:1px solid var(--border);
@@ -185,7 +219,7 @@
 <body>
 
 <header>
-  <div class="logo">Morph<span>eus</span></div>
+  <a href="about.html" class="logo">Morpho<span>Capture</span></a>
   <div class="tagline">EDA Suite for Programmable Organism Design</div>
   <div class="status-pill" id="status-pill">● Ready</div>
 </header>
@@ -303,7 +337,7 @@
       <h3>Run Simulation</h3>
       <div style="display:flex; flex-direction:column; gap:8px;">
         <button class="btn btn-primary" id="run-btn" onclick="startOptimization()">
-          🧬 Run Morpheus
+          🧬 Run MorphoCapture
         </button>
         <button class="btn btn-secondary" onclick="runQuickSim()">
           ⚡ Quick Simulate
@@ -365,6 +399,13 @@
         <div class="legend-item"><div class="legend-dot" style="background:var(--stiff)"></div><span style="font-size:11px">Stiff (core)</span></div>
         <div class="legend-item"><div class="legend-dot" style="background:#fbbf24;border-radius:50%"></div><span style="font-size:11px">Free contaminant</span></div>
         <div class="legend-item"><div class="legend-dot" style="background:#ef4444;border-radius:50%"></div><span style="font-size:11px">Captured contaminant</span></div>
+      </div>
+
+      <div class="picture-box" id="picture-box">
+        <div class="picture-box-title">Real-Time Capture</div>
+        <div class="picture-frame" id="picture-frame">
+          <div class="picture-placeholder">Awaiting simulation...</div>
+        </div>
       </div>
     </div>
 
@@ -621,19 +662,29 @@ function handleWsMessage(e) {
       setStatus(`Generation ${d.generation} | Best: ${(d.best_overall||0).toFixed(2)}`, 10 + genCount * 0.5);
       const capturePct = (d.capture_pct != null ? d.capture_pct : 0).toFixed(1);
       addMetricsLogLine(`Gen ${d.generation} | Fitness: ${(d.best_overall||0).toFixed(2)} | Capture: ${capturePct}%`);
+      
+      // Show a random picture each time a generation completes
+      showRandomPicture();
     }
     if (d.bo_iter !== undefined) {
       setStage('evo', 'done'); setStage('bo', 'active');
       setStatus(`Bayesian optimization: iteration ${d.bo_iter}`, 60 + d.bo_iter);
       addMetricsLogLine(`BO iter ${d.bo_iter} | Fitness: ${(d.fitness!=null?d.fitness:0).toFixed(2)} | Best: ${(d.best!=null?d.best:0).toFixed(2)}`);
+      
+      // Show a random picture on each BO iteration
+      showRandomPicture();
     }
     if (d.grad_step !== undefined) {
       setStage('bo', 'done'); setStage('grad', 'active');
       setStatus(`Gradient ascent: step ${d.grad_step} | F=${(d.fitness||0).toFixed(2)}`, 80);
       const fitEl = document.getElementById('metric-fitness');
       if (fitEl) fitEl.textContent = (d.best||0).toFixed(1);
-      if (d.grad_step % 20 === 0 || d.grad_step === 0)
+      if (d.grad_step % 20 === 0 || d.grad_step === 0) {
         addMetricsLogLine(`Gradient step ${d.grad_step} | F: ${(d.fitness!=null?d.fitness:0).toFixed(2)} | Best: ${(d.best!=null?d.best:0).toFixed(2)}`);
+        
+        // Show a random picture every 20 gradient steps
+        showRandomPicture();
+      }
     }
     return;
   }
@@ -661,6 +712,9 @@ function handleWsMessage(e) {
     setStage('proto', 'done');
     generateProtocolUI(d);
     addMetricsLogLine(`Optimization complete — Capture: ${(d.capture_efficiency||0).toFixed(1)}% | Fitness: ${(d.best_fitness||0).toFixed(2)} | ${(msg.data.stages||[]).map(s=>s.stage).join(' → ')}`);
+    
+    // Show final random picture when optimization completes
+    showRandomPicture();
     return;
   }
   if (msg.type === 'sim_complete') {
@@ -670,6 +724,9 @@ function handleWsMessage(e) {
     document.getElementById('metric-energy').textContent = (d.energy_nJ != null ? d.energy_nJ : 0).toFixed(2);
     setStatus(`Sim complete — Capture: ${(d.capture_efficiency!=null?d.capture_efficiency:0).toFixed(1)}%`, 100);
     addMetricsLogLine(`Quick simulate complete — Capture: ${(d.capture_efficiency!=null?d.capture_efficiency:0).toFixed(1)}% | Fitness: ${(d.fitness!=null?d.fitness:0).toFixed(2)} | Energy: ${(d.energy_nJ!=null?d.energy_nJ:0).toFixed(2)} nJ`);
+    
+    // Show final random picture when simulation completes
+    showRandomPicture();
     return;
   }
   if (msg.type === 'text') {
@@ -760,6 +817,9 @@ async function startOptimization() {
     setStage('evo', 'active');
     switchTab('metrics');
     addMetricsLogLine('Starting NEAT evolution...');
+    
+    // Reset picture box to show awaiting state
+    resetPictureBox();
   };
 
   genCount = 0;
@@ -774,6 +834,10 @@ async function runQuickSim() {
   simHistory = [];
   switchTab('metrics');
   addMetricsLogLine('Quick simulate started...');
+  
+  // Show a random picture at the start of simulation
+  showRandomPicture();
+  
   ws = new WebSocket(`ws://localhost:8000/ws/${sessionId}`);
   ws.onmessage = handleWsMessage;
   ws.onopen = () => {
@@ -968,6 +1032,76 @@ function updateDimNumbers(dim) {
 }
 
 // ══════════════════════════════════════════════════════════
+// PICTURE BOX — Real-time image display
+// ══════════════════════════════════════════════════════════
+let realPictures = []; // Array to store image paths
+let pictureUpdateInterval = null;
+
+function loadRealPictures(imagePaths) {
+  /**
+   * Load an array of image paths that will be randomly displayed.
+   * Call this with an array of image URLs or local paths.
+   * Example: loadRealPictures(['images/pic1.jpg', 'images/pic2.jpg'])
+   */
+  realPictures = imagePaths;
+}
+
+function showRandomPicture() {
+  if (realPictures.length === 0) return;
+  
+  const frame = document.getElementById('picture-frame');
+  const randomIndex = Math.floor(Math.random() * realPictures.length);
+  const imagePath = realPictures[randomIndex];
+  
+  // Add subtle fade effect
+  frame.style.opacity = '0.5';
+  setTimeout(() => {
+    frame.innerHTML = `<img src="${imagePath}" alt="Real capture" style="opacity:0" />`;
+    const img = frame.querySelector('img');
+    if (img) {
+      img.onload = () => {
+        img.style.opacity = '1';
+        frame.style.opacity = '1';
+      };
+    }
+  }, 150);
+}
+
+function startPictureDisplay(intervalMs = 2000) {
+  /**
+   * Start cycling through pictures at the specified interval.
+   * Default: update every 2 seconds
+   */
+  if (pictureUpdateInterval) {
+    clearInterval(pictureUpdateInterval);
+  }
+  
+  if (realPictures.length > 0) {
+    showRandomPicture(); // Show first one immediately
+    pictureUpdateInterval = setInterval(showRandomPicture, intervalMs);
+  }
+}
+
+function stopPictureDisplay() {
+  /**
+   * Stop the picture cycling
+   */
+  if (pictureUpdateInterval) {
+    clearInterval(pictureUpdateInterval);
+    pictureUpdateInterval = null;
+  }
+}
+
+function resetPictureBox() {
+  /**
+   * Reset picture box to empty state
+   */
+  stopPictureDisplay();
+  const frame = document.getElementById('picture-frame');
+  frame.innerHTML = '<div class="picture-placeholder">Awaiting simulation...</div>';
+}
+
+// ══════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
@@ -976,6 +1110,17 @@ window.addEventListener('DOMContentLoaded', () => {
   // Show demo organism on load
   currentGrid = generateDemoGrid();
   renderGrid(currentGrid);
+
+  // ═══════════════════════════════════════════════════════════
+  // Load real capture images - will show randomly on each generation
+  // ═══════════════════════════════════════════════════════════
+  loadRealPictures([
+    'images/Screenshot 2026-03-08 at 17.10.21.png',
+    'images/Screenshot 2026-03-08 at 17.10.35.png',
+    'images/Screenshot 2026-03-08 at 17.10.45.png',
+    'images/Screenshot 2026-03-08 at 17.10.52.png',
+    'images/Screenshot 2026-03-08 at 17.11.00.png'
+  ]);
 
   // Fluid select → update viscosity defaults
   document.getElementById('fluid-select').addEventListener('change', e => {
