@@ -698,7 +698,6 @@ function handleWsMessage(e) {
     const d = msg.data;
     document.getElementById('metric-capture').textContent = (d.capture_efficiency || 0).toFixed(1) + '%';
     document.getElementById('metric-fitness').textContent = (d.best_fitness || 0).toFixed(1);
-    // document.getElementById('metric-energy').textContent = (d.energy_nJ || 0).toFixed(2);
     if (d.best_grid) {
       currentGrid = d.best_grid;
       renderGrid(d.best_grid);
@@ -717,9 +716,8 @@ function handleWsMessage(e) {
     const d = msg.data;
     document.getElementById('metric-capture').textContent = (d.capture_efficiency != null ? d.capture_efficiency : 0).toFixed(1) + '%';
     document.getElementById('metric-fitness').textContent = (d.fitness != null ? d.fitness : 0).toFixed(1);
-    // document.getElementById('metric-energy').textContent = (d.energy_nJ != null ? d.energy_nJ : 0).toFixed(2);
     setStatus(`Sim complete — Capture: ${(d.capture_efficiency!=null?d.capture_efficiency:0).toFixed(1)}%`, 100);
-    addMetricsLogLine(`Quick simulate complete — Capture: ${(d.capture_efficiency!=null?d.capture_efficiency:0).toFixed(1)}% | Fitness: ${(d.fitness!=null?d.fitness:0).toFixed(2)} | Energy: ${(d.energy_nJ!=null?d.energy_nJ:0).toFixed(2)} nJ`);
+    addMetricsLogLine(`Quick simulate complete — Capture: ${(d.capture_efficiency!=null?d.capture_efficiency:0).toFixed(1)}% | Fitness: ${(d.fitness!=null?d.fitness:0).toFixed(2)}`);
     
     // Show final random picture when simulation completes
     showRandomPicture();
@@ -949,7 +947,7 @@ function generateProtocolUI(data) {
       <div class="protocol-item">
         <div class="step-label">BEST MORPHOLOGY</div>
         Capture efficiency: <strong>${(data.capture_efficiency||0).toFixed(1)}%</strong> in silico<br/>
-        Fitness: ${(data.best_fitness||0).toFixed(2)} | Energy: ${(data.energy_nJ||0).toFixed(2)} nJ
+        Fitness: ${(data.best_fitness||0).toFixed(2)}
       </div>
     </div>
     <div class="protocol-section">

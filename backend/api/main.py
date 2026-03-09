@@ -373,8 +373,8 @@ async def _run_optimization_ws(ws: WebSocket, session: Dict, config: Dict):
     vae       = MorphologyVAE(grid_size=grid_size)
     surrogate = MorpheusSurrogate()
 
-    def sim_fn(grid, record_history=False, generation=0):
-        return run_simulation(grid, sim_config, record_history=record_history, generation=generation)
+    def sim_fn(grid, record_history=False):
+        return run_simulation(grid, sim_config, record_history=record_history)
 
     optimizer = BayesianMorphologyOptimizer(vae, surrogate, sim_fn, sim_config, grid_size)
 

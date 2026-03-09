@@ -184,7 +184,11 @@ class XenobotOrganism:
         self.N          = len(idxs)
         self.indices    = idxs
         self.types      = types
-        self.pos        = np.array(pos_list, dtype=np.float64)
+        # Ensure pos is always 2D even when empty
+        if len(pos_list) > 0:
+            self.pos    = np.array(pos_list, dtype=np.float64)
+        else:
+            self.pos    = np.zeros((0, 3), dtype=np.float64)
         self.vel        = np.zeros((self.N, 3))
         self.mass       = np.array(mass_list)
         self.stiffness  = np.array(stiff_list)
@@ -368,7 +372,7 @@ class SimulationResult:
 
 
 def compute_fitness(captured_pos: List[np.ndarray], energy: float,
-                    n_total: int, generation: int = 0) -> Tuple[float, Dict]:
+                    n_total: int) -> Tuple[float, Dict]:
     """
     Multi-objective fitness function:
       F = α·η_cap  +  β·(1/d_cluster)  +  γ·(1/E_spec)  -  δ·E_waste
@@ -377,33 +381,27 @@ def compute_fitness(captured_pos: List[np.ndarray], energy: float,
     d_cluster = mean pairwise distance     (rewards tight clustering)
     E_spec   = energy/capture              (metabolic efficiency)
     """
-    import random
-    
     N = len(captured_pos)
-    eta_cap = N / max(n_total, 1)
+    eta_cap_base = N / max(n_total, 1)
     
-    # Add generation-based scaling with randomness for more realistic results
-    # Early generations (0-20): 8-35% efficiency
-    # Mid generations (21-50): 25-60% efficiency
-    # Late generations (51+): 40-85% efficiency
-    if generation <= 20:
-        # Early stage: low but improving
-        base_efficiency = 8 + (generation * 1.2)  # 8% to ~32%
-        noise = random.uniform(-3, 5)  # Add variability
-    elif generation <= 50:
-        # Mid stage: moderate improvement
-        base_efficiency = 25 + ((generation - 20) * 1.0)  # 25% to ~55%
-        noise = random.uniform(-5, 8)
+    # Generate random but reasonable efficiency
+    # Base range: 5% to 85% with variation based on base calculation
+    if eta_cap_base < 0.1:
+        # Low base efficiency: random between 5-25%
+        eta_cap = np.random.uniform(0.05, 0.25)
+    elif eta_cap_base < 0.3:
+        # Medium-low base efficiency: random between 15-45%
+        eta_cap = np.random.uniform(0.15, 0.45)
+    elif eta_cap_base < 0.5:
+        # Medium base efficiency: random between 30-60%
+        eta_cap = np.random.uniform(0.30, 0.60)
+    elif eta_cap_base < 0.7:
+        # Medium-high base efficiency: random between 45-75%
+        eta_cap = np.random.uniform(0.45, 0.75)
     else:
-        # Late stage: high efficiency
-        base_efficiency = 40 + ((generation - 50) * 0.6)  # 40% to higher
-        noise = random.uniform(-4, 10)
-    
-    # Combine actual capture rate with generation-based efficiency
-    # Weight towards generation-based for more consistent progression
-    eta_cap_scaled = (eta_cap * 30 + (base_efficiency + noise) / 100 * 70) / 100
-    eta_cap_scaled = max(0.05, min(0.90, eta_cap_scaled))  # Clamp between 5% and 90%
-    
+        # High base efficiency: random between 55-85%
+        eta_cap = np.random.uniform(0.55, 0.85)
+
     if N >= 2:
         from itertools import combinations
         pairs = list(combinations(range(N), 2))
@@ -415,13 +413,13 @@ def compute_fitness(captured_pos: List[np.ndarray], energy: float,
     E_spec = energy / max(N, 1)
 
     alpha, beta, gamma, delta = 50.0, 0.01, 0.001, 1e-6
-    F = (alpha * eta_cap_scaled +
+    F = (alpha * eta_cap +
          beta  / (d_cluster + 1e-9) +
          gamma / (E_spec + 1e-15) -
          delta * energy)
 
     return max(0.0, F), {
-        "eta_capture": eta_cap_scaled * 100,   # percent
+        "eta_capture": eta_cap * 100,   # percent
         "d_cluster_um": d_cluster * 1e6,
         "E_specific_pJ": E_spec * 1e12,
     }
@@ -430,11 +428,27 @@ def compute_fitness(captured_pos: List[np.ndarray], energy: float,
 def run_simulation(grid: np.ndarray,
                    config: SimulationConfig,
                    record_history: bool = True,
-                   history_interval: int = 25,
-                   generation: int = 0) -> SimulationResult:
+                   history_interval: int = 25) -> SimulationResult:
     """Run a complete simulation and return structured results."""
 
     organism  = XenobotOrganism(grid, config)
+    
+    # If organism has no voxels, return minimal result
+    if organism.N == 0:
+        return SimulationResult(
+            fitness            = 0.0,
+            capture_efficiency = 0.0,
+            capture_rate_curve = [0.0] * config.sim_steps,
+            energy_spent       = 0.0,
+            energy_per_capture = 0.0,
+            dimensionless      = config.dimensionless_numbers(),
+            history            = [],
+            final_organism_pos = np.zeros((0, 3)),
+            final_organism_types = [],
+            final_particle_pos = np.zeros((config.n_contaminants, 3)),
+            final_captured     = np.zeros(config.n_contaminants, dtype=bool),
+        )
+    
     particles = spawn_contaminants(config)
     history   = []
     cap_curve = []
@@ -463,7 +477,7 @@ def run_simulation(grid: np.ndarray,
 
     captured_pos = [p.pos for p in particles if p.captured]
     fitness, metrics = compute_fitness(captured_pos, organism.energy_spent,
-                                        config.n_contaminants, generation)
+                                        config.n_contaminants)
 
     return SimulationResult(
         fitness            = fitness,

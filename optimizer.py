@@ -460,7 +460,7 @@ class BayesianMorphologyOptimizer:
             # Run real simulation on top-3 for ground truth
             real_fitnesses = []
             for i in range(min(3, len(parents))):
-                result = self.sim_fn(grids[ranked[i][1]], generation=gen)
+                result = self.sim_fn(grids[ranked[i][1]])
                 real_fitnesses.append(result.fitness)
                 self.observed_z.append(None)   # will encode later
                 self.observed_fitness.append(result.fitness)
